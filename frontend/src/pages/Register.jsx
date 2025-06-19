@@ -22,9 +22,10 @@ export default function Register() {
   };
 
   const validate = () => {
-    const { email, password } = formData;
+    const { email, password, document_number, phone } = formData;
     const allowedEmail = /^[a-zA-Z0-9@.]+$/;
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/;
+    const onlyNumbers = /^\d+$/;
 
     if (!allowedEmail.test(email)) {
       return "Correo inválido: solo letras, números, '.' y '@'.";
@@ -46,6 +47,19 @@ export default function Register() {
       return "La contraseña debe tener mínimo 8 caracteres.";
     }
 
+    if (!onlyNumbers.test(document_number)) {
+      return "El número de documento solo debe contener números.";
+    }
+    if (document_number.length !== 10) {
+      return "El número de documento debe tener exactamente 10 dígitos.";
+    }
+    if (!onlyNumbers.test(phone)) {
+      return "El número de teléfono solo debe contener números.";
+    }
+    if (phone.length !== 10) {
+      return "El número de teléfono debe tener exactamente 10 dígitos.";
+    }
+
     return null;
   };
 
@@ -61,13 +75,13 @@ export default function Register() {
     }
 
     try {
-      const response = await axios.post("http://localhost/api/auth/register", formData);
+      const response = await axios.post("http://localhost:80/api/auth/register", formData);
       setSuccess("Registro exitoso. Bienvenido.");
       // ✅ Redirigir al inicio (página principal)
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Error al registrar el usuario.");
+      setError(err.response?.data?.message || err.response?.data?.error || "Error al registrar el usuario.");
     }
   };
 

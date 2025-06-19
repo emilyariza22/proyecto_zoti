@@ -1,8 +1,23 @@
 // backend/controllers/authController.js
-const pool = require("../utils/db");
+const { pool } = require("../utils/db"); // ✅ Importación corregida
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { validatePassword } = require("../utils/passwordValidator");
 
+// Validación de correo
+const validateEmail = (email) => {
+  if (!email.includes('@')) return "Incluye un signo '@' en la dirección de correo electrónico";
+  if (!email.includes('.')) return "La dirección de correo debe incluir un punto (.)";
+  if (email.indexOf('@') !== email.lastIndexOf('@')) return "La dirección de correo solo debe contener un signo '@'";
+
+  const [localPart, domain] = email.split('@');
+  if (!localPart || !domain) return "Formato de correo electrónico inválido";
+  if (!/^[a-zA-Z0-9._-]+$/.test(localPart)) return "El correo solo puede contener letras, números, puntos, guiones y guiones bajos";
+
+  return null;
+};
+
+// Registro de usuario
 exports.register = async (req, res) => {
   const {
     full_name,
@@ -15,22 +30,65 @@ exports.register = async (req, res) => {
   } = req.body;
 
   try {
-    // Verificar que no exista usuario con ese email o documento
+    // Validar formato de correo
+    const emailError = validateEmail(email);
+    if (emailError) {
+      return res.status(400).json({ 
+        field: "email",
+        message: emailError 
+      });
+    }
+
+    // Validar contraseña
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        field: "password",
+        message: passwordValidation.errors.join(", ")
+      });
+    }
+
+    // Validar número de documento
+    if (!/^\d{10}$/.test(document_number)) {
+      return res.status(400).json({
+        field: "document_number",
+        message: "El número de documento debe tener exactamente 10 dígitos numéricos."
+      });
+    }
+    // Validar teléfono
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({
+        field: "phone",
+        message: "El número de teléfono debe tener exactamente 10 dígitos numéricos."
+      });
+    }
+
+    // Verificar duplicados
     const [exists] = await pool.query(
-      "SELECT id FROM users WHERE email = ? OR document_number = ?",
+      "SELECT id, email, document_number FROM users WHERE email = ? OR document_number = ?",
       [email, document_number]
     );
+
     if (exists.length) {
-      return res
-        .status(400)
-        .json({ message: "Ya existe un usuario con ese email o documento" });
+      const existingUser = exists[0];
+      if (existingUser.email === email) {
+        return res.status(400).json({
+          field: "email",
+          message: "Ya existe una cuenta con este correo electrónico"
+        });
+      } else {
+        return res.status(400).json({
+          field: "document_number",
+          message: "Ya existe una cuenta con este número de documento"
+        });
+      }
     }
 
     // Hashear contraseña
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
 
-    // Insertar
+    // Insertar nuevo usuario
     const [result] = await pool.query(
       `INSERT INTO users 
         (full_name, document_type, document_number, phone, email, password, role)
@@ -48,6 +106,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// Login de usuario
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -56,6 +115,7 @@ exports.login = async (req, res) => {
       "SELECT id, password, full_name, role FROM users WHERE email = ?",
       [email]
     );
+
     const user = rows[0];
     if (!user) {
       return res.status(401).json({ message: "Credenciales inválidas" });
@@ -73,7 +133,14 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.json({ token, user: { id: user.id, full_name: user.full_name, role: user.role } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al iniciar sesión", error });

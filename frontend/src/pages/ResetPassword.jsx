@@ -1,19 +1,30 @@
-import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
+const API_URL = 'http://localhost:80/api';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { token: resetToken } = useParams(); // Extrae token de la URL
+  const { token: resetToken } = useParams();
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [formData, setFormData] = useState({
+    newPassword: "",
+    confirmPassword: ""
+  });
+
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({...prev, [name]: value}));
+  };
 
   useEffect(() => {
     if (!resetToken) {
-      setError("Código de restablecimiento inválido.");
+      setError("El código de restablecimiento es inválido o ha expirado. Por favor, solicita uno nuevo.");
     }
   }, [resetToken]);
 
@@ -21,56 +32,99 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     setMessage("");
+    setIsLoading(true);
+
+    const { newPassword, confirmPassword } = formData;
+
+    // Validaciones básicas
+    if (!newPassword || !confirmPassword) {
+      setError("Por favor, completa todos los campos.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validación de seguridad de contraseña
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError("La contraseña debe tener al menos una mayúscula, un número y un carácter especial.");
+      setIsLoading(false);
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
+      setIsLoading(false);
       return;
     }
+
     if (newPassword.length < 8) {
-      setError("La contraseña debe tener mínimo 8 caracteres.");
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      setIsLoading(false);
       return;
     }
 
     try {
       await axios.post(
-        `http://localhost:80/api/password/reset/${resetToken}`,
-        { password: newPassword }
+        `${API_URL}/password/reset`,
+        { 
+          resetCode: resetToken,
+          newPassword
+        }
       );
-      setMessage("Contraseña actualizada correctamente. Redirigiendo...");
+      
+      setMessage("¡Contraseña actualizada exitosamente! Serás redirigido al inicio de sesión...");
       setTimeout(() => navigate("/inicio-sesion"), 3000);
     } catch (err) {
       setError(err.response?.data?.message || "Error al restablecer la contraseña.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Restablecer Contraseña</h2>
+      <div className="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 className="text-2xl font-bold text-center mb-6">Restablecer Contraseña</h2>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"
+            name="newPassword"
             placeholder="Nueva contraseña"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded"
+            value={formData.newPassword}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+
           <input
             type="password"
+            name="confirmPassword"
             placeholder="Confirmar contraseña"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded"
+            value={formData.confirmPassword}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {message && <p className="text-green-600 text-sm">{message}</p>}
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          {message && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-md text-sm">
+              {message}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded"
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
           >
-            Cambiar Contraseña
+            {isLoading ? "Procesando..." : "Cambiar Contraseña"}
           </button>
         </form>
       </div>

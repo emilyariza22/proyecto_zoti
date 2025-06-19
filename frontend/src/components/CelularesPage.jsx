@@ -1,4 +1,3 @@
-import React from 'react';
 import { ProductDetailCard4, ProductDetailCard5 } from './ProductCard';
 
 const CelularesPage = () => {
