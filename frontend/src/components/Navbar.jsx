@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo ti360 blanco.png';
 
 const Navbar = () => {
-  const navigate = useNavigate(); // 👈 Hook para navegar
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Verificar si el usuario es admin
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsAdmin(userData.role === 'admin');
+  }, []);
 
   const categories = [
     { name: 'Celulares', path: '/celulares' },
@@ -31,6 +38,18 @@ const Navbar = () => {
         <span className="icon" style={iconStyle}>🤍</span>
         <span className="icon" style={iconStyle}>🛒</span>
 
+        {/* Botón de solicitudes solo para administradores */}
+        {isAdmin && (
+          <span
+            className="icon"
+            style={iconStyle}
+            onClick={() => navigate('/purchase-requests')}
+            title="Purchase Requests"
+          >
+            📋
+          </span>
+        )}
+
         {/* Ícono de usuario con navegación */}
         <span
           className="icon"
@@ -48,6 +67,13 @@ const Navbar = () => {
           </li>
         ))}
       </ul>
+
+      {/* Botón de Solicitudes de Compra, visible solo para administradores */}
+      {isAdmin && (
+        <div className="admin-request-button" style={adminButtonStyle}>
+          <span>📦</span> Solicitudes de Compra
+        </div>
+      )}
     </nav>
   );
 };
@@ -66,6 +92,22 @@ const iconStyle = {
   transition: 'transform 0.2s, box-shadow 0.2s',
   cursor: 'pointer',
   borderRadius: '8px',
+};
+
+// Estilo para el botón de Solicitudes de Compra
+const adminButtonStyle = {
+  background: 'linear-gradient(135deg, #ff512f 60%, #dd2476 100%)',
+  boxShadow: '0 2px 12px #ff3d00',
+  border: '2px solid #fff',
+  padding: '0.5rem 1rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '1rem',
+  transition: 'transform 0.2s, box-shadow 0.2s',
+  cursor: 'pointer',
+  borderRadius: '8px',
+  marginLeft: '1rem',
 };
 
 export default Navbar;

@@ -34,6 +34,7 @@ import Login from './pages/Login';
 import Recuperar from './pages/Recuperar';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
+import PurchaseRequests from './pages/PurchaseRequests';
 
 import './App.css';
 
@@ -51,11 +52,11 @@ const categories = [
 function MainApp() {
   const [page, setPage] = useState(0);
   const location = useLocation();
-  const solicitudRef = useRef(null);
+  const requestRef = useRef(null);
 
   useEffect(() => {
-    if (location.state?.scrollTo === 'solicitud-compra' && solicitudRef.current) {
-      solicitudRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (location.state?.scrollTo === 'purchase-request' && requestRef.current) {
+      requestRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [location]);
 
@@ -121,7 +122,7 @@ function MainApp() {
           )}
           <div className="product-list">{productsToShow}</div>
           <div style={{ height: '2rem' }} />
-          <div ref={solicitudRef} id="solicitud-compra">
+          <div ref={requestRef} id="purchase-request">
             <PaginationDemo currentPage={page} setPage={setPage} />
           </div>
         </section>
@@ -141,9 +142,10 @@ export default function App() {
         <Route path="/recuperar" element={<Recuperar />} />
         <Route path="/configuraciones" element={<Configuraciones />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/purchase-requests" element={<PurchaseRequests />} />
 
         {/* Rutas de productos */}
-        <Route path="/solicitud" element={<SolicitudPage />} />
+        <Route path="/new-request" element={<SolicitudPage />} />
         <Route path="/celulares" element={<CelularesPage />} />
         <Route path="/computadores" element={<ComputadoresPage />} />
         <Route path="/monitores" element={<MonitoresPage />} />

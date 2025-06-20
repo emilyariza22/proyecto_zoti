@@ -53,9 +53,19 @@ export default function LoginTI360() {
       return;
     }
 
-    // Aquí iría tu lógica real de login con backend
-
-    navigate("/home"); // Simulación de login exitoso
+    // Simulación de autenticación exitosa con rol de administrador
+    const userData = {
+      token: 'simulado-jwt-token-1234567890',
+      role: 'admin',
+      name: 'Administrador',
+      email: email
+    };
+    
+    // Guardar los datos del usuario en localStorage
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    // Redirigir a la página principal (home)
+    navigate("/home");
   };
 
   return (

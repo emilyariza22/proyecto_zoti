@@ -14,4 +14,26 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-module.exports = verifyToken;
+const verifyAdmin = (req, res, next) => {
+  // MODO DE PRUEBA: Bypass de autenticación para desarrollar y probar
+  // IMPORTANTE: Revertir estos cambios antes de producción
+  console.log("MODO DE PRUEBA: Acceso permitido sin verificación");
+  next();
+  
+  /* Código original comentado para pruebas
+  verifyToken(req, res, () => {
+    if (req.user && req.user.role === 'admin') {
+      next();
+    } else {
+      return res.status(403).json({
+        message: "Acceso denegado. Se requiere rol de administrador."
+      });
+    }
+  });
+  */
+};
+
+module.exports = {
+  verifyToken,
+  verifyAdmin
+};
